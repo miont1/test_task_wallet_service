@@ -126,7 +126,9 @@ async def test_webhook_partially_paid_success(
     payload_str = json.dumps(payload)
     headers = make_signed_headers(payload_str, settings.provider_webhook_secret)
 
-    res = await client.post("/v1/webhooks/provider", content=payload_str, headers=headers)
+    res = await client.post(
+        "/v1/webhooks/provider", content=payload_str, headers=headers
+    )
     assert res.status_code == status.HTTP_200_OK
 
     await db_session.refresh(dep)
@@ -165,7 +167,9 @@ async def test_webhook_expired_success(
     payload_str = json.dumps(payload)
     headers = make_signed_headers(payload_str, settings.provider_webhook_secret)
 
-    res = await client.post("/v1/webhooks/provider", content=payload_str, headers=headers)
+    res = await client.post(
+        "/v1/webhooks/provider", content=payload_str, headers=headers
+    )
     assert res.status_code == status.HTTP_200_OK
 
     await db_session.refresh(dep)
@@ -205,14 +209,18 @@ async def test_webhook_duplicate_event_id_idempotency(
     headers = make_signed_headers(payload_str, settings.provider_webhook_secret)
 
     # First delivery
-    res1 = await client.post("/v1/webhooks/provider", content=payload_str, headers=headers)
+    res1 = await client.post(
+        "/v1/webhooks/provider", content=payload_str, headers=headers
+    )
     assert res1.status_code == status.HTTP_200_OK
 
     await db_session.refresh(acc)
     assert acc.balance_usd == Decimal("98.50")
 
     # Second delivery with identical event_id
-    res2 = await client.post("/v1/webhooks/provider", content=payload_str, headers=headers)
+    res2 = await client.post(
+        "/v1/webhooks/provider", content=payload_str, headers=headers
+    )
     assert res2.status_code == status.HTTP_200_OK
     assert "Duplicate event already processed" in res2.json()["message"]
 
@@ -252,7 +260,9 @@ async def test_webhook_ignored_if_deposit_already_closed(
     payload_str = json.dumps(payload)
     headers = make_signed_headers(payload_str, settings.provider_webhook_secret)
 
-    res = await client.post("/v1/webhooks/provider", content=payload_str, headers=headers)
+    res = await client.post(
+        "/v1/webhooks/provider", content=payload_str, headers=headers
+    )
     assert res.status_code == status.HTTP_200_OK
     assert "already closed" in res.json()["message"]
 
@@ -274,7 +284,9 @@ async def test_webhook_invalid_signature_rejected(
     payload_str = json.dumps(payload)
     headers = make_signed_headers(payload_str, "wrong_secret")
 
-    res = await client.post("/v1/webhooks/provider", content=payload_str, headers=headers)
+    res = await client.post(
+        "/v1/webhooks/provider", content=payload_str, headers=headers
+    )
     assert res.status_code == status.HTTP_401_UNAUTHORIZED
     assert res.json()["error"]["code"] == "invalid_signature"
 
@@ -294,9 +306,13 @@ async def test_webhook_expired_timestamp_rejected(
     payload_str = json.dumps(payload)
     # Timestamp from 10 minutes ago (> 300s)
     old_timestamp = int(time.time()) - 600
-    headers = make_signed_headers(payload_str, settings.provider_webhook_secret, timestamp=old_timestamp)
+    headers = make_signed_headers(
+        payload_str, settings.provider_webhook_secret, timestamp=old_timestamp
+    )
 
-    res = await client.post("/v1/webhooks/provider", content=payload_str, headers=headers)
+    res = await client.post(
+        "/v1/webhooks/provider", content=payload_str, headers=headers
+    )
     assert res.status_code == status.HTTP_401_UNAUTHORIZED
     assert res.json()["error"]["code"] == "timestamp_expired"
 
@@ -328,6 +344,8 @@ async def test_webhook_nonexistent_invoice_not_found(
     payload_str = json.dumps(payload)
     headers = make_signed_headers(payload_str, settings.provider_webhook_secret)
 
-    res = await client.post("/v1/webhooks/provider", content=payload_str, headers=headers)
+    res = await client.post(
+        "/v1/webhooks/provider", content=payload_str, headers=headers
+    )
     assert res.status_code == status.HTTP_404_NOT_FOUND
     assert res.json()["error"]["code"] == "deposit_not_found"

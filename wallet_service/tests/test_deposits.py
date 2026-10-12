@@ -77,7 +77,9 @@ async def test_create_deposit_provider_timeout(client: httpx.AsyncClient) -> Non
     api_key = acc_res.json()["api_key"]
 
     class TimeoutProviderClient:
-        async def create_invoice(self, *args: Any, **kwargs: Any) -> ProviderInvoiceResponse:
+        async def create_invoice(
+            self, *args: Any, **kwargs: Any
+        ) -> ProviderInvoiceResponse:
             raise ProviderTimeoutError()
 
     app.dependency_overrides[get_provider_client] = lambda: TimeoutProviderClient()
@@ -101,7 +103,9 @@ async def test_create_deposit_provider_unreachable(client: httpx.AsyncClient) ->
     api_key = acc_res.json()["api_key"]
 
     class UnreachableProviderClient:
-        async def create_invoice(self, *args: Any, **kwargs: Any) -> ProviderInvoiceResponse:
+        async def create_invoice(
+            self, *args: Any, **kwargs: Any
+        ) -> ProviderInvoiceResponse:
             raise ProviderUnavailableError()
 
     app.dependency_overrides[get_provider_client] = lambda: UnreachableProviderClient()
@@ -119,12 +123,15 @@ async def test_create_deposit_provider_unreachable(client: httpx.AsyncClient) ->
         app.dependency_overrides.pop(get_provider_client, None)
 
 
-@pytest.mark.parametrize("invalid_amount", [
-    10.0,       # Float instead of string -> 422
-    "0.00",     # Zero amount -> 422
-    "-5.00",    # Negative amount -> 422
-    "10.5",     # Invalid precision -> 422
-])
+@pytest.mark.parametrize(
+    "invalid_amount",
+    [
+        10.0,  # Float instead of string -> 422
+        "0.00",  # Zero amount -> 422
+        "-5.00",  # Negative amount -> 422
+        "10.5",  # Invalid precision -> 422
+    ],
+)
 @pytest.mark.asyncio
 async def test_create_deposit_validation_errors(
     client: httpx.AsyncClient,

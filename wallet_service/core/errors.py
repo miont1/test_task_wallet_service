@@ -21,7 +21,9 @@ class AppError(Exception):
 
 
 class UnauthorizedError(AppError):
-    def __init__(self, message: str = "Unauthorized", code: str = "unauthorized") -> None:
+    def __init__(
+        self, message: str = "Unauthorized", code: str = "unauthorized"
+    ) -> None:
         super().__init__(
             message=message,
             code=code,
@@ -30,7 +32,9 @@ class UnauthorizedError(AppError):
 
 
 class NotFoundError(AppError):
-    def __init__(self, message: str = "Resource not found", code: str = "not_found") -> None:
+    def __init__(
+        self, message: str = "Resource not found", code: str = "not_found"
+    ) -> None:
         super().__init__(
             message=message,
             code=code,

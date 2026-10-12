@@ -49,7 +49,10 @@ async def seed_data() -> None:
                 await session.flush()
 
                 # Add initial transaction record if balance > 0
-                if user_info["balance_usd"] > Decimal("0.00") or user_info["balance_credits"] > 0:
+                if (
+                    user_info["balance_usd"] > Decimal("0.00")
+                    or user_info["balance_credits"] > 0
+                ):
                     txn = Transaction(
                         account_id=account.id,
                         type=TransactionType.DEPOSIT.value,
@@ -66,7 +69,9 @@ async def seed_data() -> None:
                     f"Created account for {user_info['name']} (ID: {account.id}) with API Key: {user_info['api_key']}"
                 )
             else:
-                print(f"Account for {user_info['name']} already exists (ID: {existing.id})")
+                print(
+                    f"Account for {user_info['name']} already exists (ID: {existing.id})"
+                )
 
         await session.commit()
     print("Database seeding completed successfully.")

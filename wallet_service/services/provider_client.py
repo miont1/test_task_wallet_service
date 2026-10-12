@@ -59,10 +59,14 @@ class ProviderClient:
                 timeout=self._settings.provider_timeout_seconds,
             )
         except httpx.TimeoutException as exc:
-            logger.error("Provider request timed out for external_id %s: %s", external_id, exc)
+            logger.error(
+                "Provider request timed out for external_id %s: %s", external_id, exc
+            )
             raise ProviderTimeoutError() from exc
         except (httpx.ConnectError, httpx.NetworkError) as exc:
-            logger.error("Provider connection failed for external_id %s: %s", external_id, exc)
+            logger.error(
+                "Provider connection failed for external_id %s: %s", external_id, exc
+            )
             raise ProviderUnavailableError() from exc
 
         if response.status_code != 201:

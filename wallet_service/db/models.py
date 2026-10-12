@@ -145,6 +145,7 @@ class Deposit(Base):
 
 class ProcessedWebhook(Base):
     """Tracks processed webhook events to guarantee idempotency and avoid double crediting."""
+
     __tablename__ = "processed_webhooks"
 
     event_id: Mapped[str] = mapped_column(
@@ -178,6 +179,7 @@ class IdempotencyRecord(Base):
     - Same key + same body -> return stored response.
     - Same key + different body -> return 409 Conflict.
     """
+
     __tablename__ = "idempotency_records"
 
     idempotency_key: Mapped[str] = mapped_column(
@@ -211,6 +213,7 @@ class IdempotencyRecord(Base):
 
 class Transaction(Base):
     """Auditable ledger of balance operations for each account."""
+
     __tablename__ = "transactions"
 
     id: Mapped[str] = mapped_column(

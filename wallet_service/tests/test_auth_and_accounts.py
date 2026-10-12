@@ -1,4 +1,3 @@
-
 import httpx
 import pytest
 from fastapi import status
@@ -62,7 +61,9 @@ async def test_get_my_account_authorized(client: httpx.AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_my_account_missing_header_returns_401(client: httpx.AsyncClient) -> None:
+async def test_get_my_account_missing_header_returns_401(
+    client: httpx.AsyncClient,
+) -> None:
     res = await client.get("/v1/accounts/me")
     assert res.status_code == status.HTTP_401_UNAUTHORIZED
     data = res.json()
@@ -71,8 +72,12 @@ async def test_get_my_account_missing_header_returns_401(client: httpx.AsyncClie
 
 
 @pytest.mark.asyncio
-async def test_get_my_account_invalid_key_returns_401(client: httpx.AsyncClient) -> None:
-    res = await client.get("/v1/accounts/me", headers={"X-API-Key": "wlt_completely_fake_key"})
+async def test_get_my_account_invalid_key_returns_401(
+    client: httpx.AsyncClient,
+) -> None:
+    res = await client.get(
+        "/v1/accounts/me", headers={"X-API-Key": "wlt_completely_fake_key"}
+    )
     assert res.status_code == status.HTTP_401_UNAUTHORIZED
     data = res.json()
     assert "error" in data

@@ -11,7 +11,7 @@ PROVIDER_FEE_RATE = Decimal("0.015")  # 1.5%
 
 BASE_CREDIT_PRICE = Decimal("0.10")  # 0.10 USD per credit
 CREDIT_TIER_1_THRESHOLD = 500
-CREDIT_TIER_1_DISCOUNT = Decimal("0.05")   # 5% discount
+CREDIT_TIER_1_DISCOUNT = Decimal("0.05")  # 5% discount
 CREDIT_TIER_2_THRESHOLD = 1000
 CREDIT_TIER_2_DISCOUNT = Decimal("0.125")  # 12.5% discount
 
@@ -38,7 +38,9 @@ def validate_money_amount(value: Any) -> Decimal:
     if not isinstance(value, str):
         raise ValueError("Money amount must be provided as a string (e.g. '10.00')")  # noqa: TRY004
     if not MONEY_REGEX.match(value):
-        raise ValueError("Money amount must have exactly two decimal places (e.g. '10.00')")
+        raise ValueError(
+            "Money amount must have exactly two decimal places (e.g. '10.00')"
+        )
     return Decimal(value)
 
 

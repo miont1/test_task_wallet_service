@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from wallet_service.api.v1.accounts import router as accounts_router
 from wallet_service.api.v1.deposits import router as deposits_router
+from wallet_service.api.v1.transfers import router as transfers_router
 from wallet_service.api.v1.webhooks import router as webhooks_router
 from wallet_service.config import get_settings
 from wallet_service.core.errors import AppError
@@ -41,14 +42,16 @@ async def handle_app_error(_: Request, exc: AppError) -> JSONResponse:
         "error": {
             "code": exc.code,
             "message": exc.message,
-            "details": exc.details,
+            "details": jsonable_encoder(exc.details),
         }
     }
     return JSONResponse(status_code=exc.status_code, content=content)
 
 
 @app.exception_handler(RequestValidationError)
-async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+async def handle_validation_error(
+    _: Request, exc: RequestValidationError
+) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={
@@ -67,7 +70,9 @@ async def handle_http_exception(_: Request, exc: HTTPException) -> JSONResponse:
         return JSONResponse(status_code=exc.status_code, content=exc.detail)
     return JSONResponse(
         status_code=exc.status_code,
-        content={"error": {"code": "http_error", "message": str(exc.detail), "details": {}}},
+        content={
+            "error": {"code": "http_error", "message": str(exc.detail), "details": {}}
+        },
     )
 
 
@@ -78,4 +83,5 @@ async def health_check() -> dict[str, str]:
 
 app.include_router(accounts_router)
 app.include_router(deposits_router)
+app.include_router(transfers_router)
 app.include_router(webhooks_router)

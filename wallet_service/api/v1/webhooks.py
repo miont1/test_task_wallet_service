@@ -63,7 +63,7 @@ async def receive_provider_webhook(
         raise AppError(
             message="Invalid webhook payload format",
             code="invalid_webhook_payload",
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             details={"errors": exc.errors()},
         ) from exc
 
@@ -73,7 +73,11 @@ async def receive_provider_webhook(
         return {"status": "ok", "message": "Duplicate event already processed"}
 
     # 4. Find deposit by invoice_id with row lock
-    stmt = select(Deposit).where(Deposit.invoice_id == payload.invoice_id).with_for_update()
+    stmt = (
+        select(Deposit)
+        .where(Deposit.invoice_id == payload.invoice_id)
+        .with_for_update()
+    )
     deposit = await session.scalar(stmt)
     if deposit is None:
         raise NotFoundError(
@@ -102,10 +106,14 @@ async def receive_provider_webhook(
         deposit.credited_amount = credited
 
         # Credit account balance with row lock
-        acc_stmt = select(Account).where(Account.id == deposit.account_id).with_for_update()
+        acc_stmt = (
+            select(Account).where(Account.id == deposit.account_id).with_for_update()
+        )
         account = await session.scalar(acc_stmt)
         if account is None:
-            raise NotFoundError(message="Associated account not found", code="account_not_found")
+            raise NotFoundError(
+                message="Associated account not found", code="account_not_found"
+            )
 
         account.balance_usd += credited
 

@@ -20,7 +20,9 @@ def get_http_client(request: Request) -> httpx.AsyncClient:
     """Retrieves shared httpx.AsyncClient from FastAPI application state."""
     client: httpx.AsyncClient | None = getattr(request.app.state, "http_client", None)
     if client is None:
-        raise RuntimeError("Application HTTP client has not been initialized in app.state")
+        raise RuntimeError(
+            "Application HTTP client has not been initialized in app.state"
+        )
     return client
 
 

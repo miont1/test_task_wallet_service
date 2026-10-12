@@ -25,13 +25,16 @@ async def db_session() -> AsyncIterator[AsyncSession]:
 @pytest_asyncio.fixture
 async def client(db_session: AsyncSession) -> AsyncIterator[httpx.AsyncClient]:
     """Provides an async HTTP test client with database dependency override."""
+
     async def override_get_db() -> AsyncIterator[AsyncSession]:
         yield db_session
 
     app.dependency_overrides[get_db_session] = override_get_db
 
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as test_client:
+    async with httpx.AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as test_client:
         app.state.http_client = test_client
         yield test_client
 
