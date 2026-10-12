@@ -9,6 +9,8 @@ from fastapi.responses import JSONResponse
 
 from wallet_service.api.v1.accounts import router as accounts_router
 from wallet_service.api.v1.deposits import router as deposits_router
+from wallet_service.api.v1.purchases import router as purchases_router
+from wallet_service.api.v1.transactions import router as transactions_router
 from wallet_service.api.v1.transfers import router as transfers_router
 from wallet_service.api.v1.webhooks import router as webhooks_router
 from wallet_service.config import get_settings
@@ -83,5 +85,7 @@ async def health_check() -> dict[str, str]:
 
 app.include_router(accounts_router)
 app.include_router(deposits_router)
+app.include_router(purchases_router)
+app.include_router(transactions_router)
 app.include_router(transfers_router)
 app.include_router(webhooks_router)

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from decimal import Decimal
 from enum import Enum
 from uuid import uuid4
@@ -262,6 +262,7 @@ class Transaction(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
+        default=lambda: datetime.now(UTC),
         index=True,
         nullable=False,
     )
