@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ledger_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ledger_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ledger_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-wallet_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ledger_user} -d ${POSTGRES_DB:-wallet_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  provider-mock:
+    build:
+      context: ./provider_mock
+      dockerfile: Dockerfile
+    container_name: ledger_provider_mock
+    restart: unless-stopped
+    ports:
+      - "${PROVIDER_PORT:-8001}:8001"
+    environment:
+      PROVIDER_API_KEY: ${PROVIDER_API_KEY:-mock-provider-key-123}
+      PROVIDER_WEBHOOK_SECRET: ${PROVIDER_WEBHOOK_SECRET:-mock-webhook-secret-456}
+      PROVIDER_BASE_PAY_URL: ${PROVIDER_BASE_PAY_URL:-https://mock-provider.local/pay}
+      PROVIDER_HOST: 0.0.0.0
+      PROVIDER_PORT: 8001
+
+  wallet-service:
+    build:
+      context: ./wallet_service
+      dockerfile: Dockerfile
+    container_name: ledger_wallet_service
+    restart: unless-stopped
+    ports:
+      - "${WALLET_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      provider-mock:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-ledger_user}:${POSTGRES_PASSWORD:-ledger_pass}@postgres:5432/${POSTGRES_DB:-wallet_db}
+      PROVIDER_BASE_URL: http://provider-mock:8001
+      PROVIDER_API_KEY: ${PROVIDER_API_KEY:-mock-provider-key-123}
+      PROVIDER_WEBHOOK_SECRET: ${PROVIDER_WEBHOOK_SECRET:-mock-webhook-secret-456}
+      WALLET_CALLBACK_URL: http://wallet-service:8000/v1/webhooks/provider
+      WALLET_HOST: 0.0.0.0
+      WALLET_PORT: 8000
+
+volumes:
+  postgres_data:
