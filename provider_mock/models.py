@@ -46,7 +46,7 @@ def validate_money_amount(value: Any) -> Decimal:
         return value
 
     if not isinstance(value, str):
-        raise TypeError("Money amount must be provided as a string (e.g. '10.00')")
+        raise ValueError("Money amount must be provided as a string (e.g. '10.00')")  # noqa: TRY004
     if not MONEY_REGEX.match(value):
         raise ValueError("Money amount must have exactly two decimal places (e.g. '10.00')")
     dec = Decimal(value)
