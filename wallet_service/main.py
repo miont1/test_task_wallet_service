@@ -1,8 +1,8 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, Response, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -15,6 +15,9 @@ from wallet_service.api.v1.transfers import router as transfers_router
 from wallet_service.api.v1.webhooks import router as webhooks_router
 from wallet_service.config import get_settings
 from wallet_service.core.errors import AppError
+from wallet_service.core.rate_limiter import rate_limiter
+
+EXEMPT_RATE_LIMIT_PREFIXES = ("/v1/webhooks", "/health", "/docs", "/openapi.json")
 
 
 @asynccontextmanager
@@ -36,6 +39,46 @@ app = FastAPI(
     version="0.1.0",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def rate_limit_middleware(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    # 1. Only POST requests are rate limited
+    if request.method != "POST":
+        return await call_next(request)
+
+    # 2. Exclude exempt endpoints (e.g. payment provider webhook)
+    path = request.url.path
+    if any(path.startswith(prefix) for prefix in EXEMPT_RATE_LIMIT_PREFIXES):
+        return await call_next(request)
+
+    # 3. Only rate limit requests that identify with an API key
+    api_key = request.headers.get("X-API-Key")
+    if not api_key:
+        return await call_next(request)
+
+    # 4. Check rate limiter (max 30 POST / min)
+    is_limited, retry_after = rate_limiter.is_rate_limited(api_key)
+    if is_limited:
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            headers={"Retry-After": str(retry_after)},
+            content={
+                "error": {
+                    "code": "rate_limit_exceeded",
+                    "message": "Rate limit exceeded. Maximum 30 POST requests per minute allowed.",
+                    "details": {
+                        "limit": 30,
+                        "retry_after": retry_after,
+                    },
+                }
+            },
+        )
+
+    return await call_next(request)
 
 
 @app.exception_handler(AppError)
