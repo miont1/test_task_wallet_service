@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncIterator
 
 import httpx
@@ -10,14 +11,24 @@ from wallet_service.main import app
 
 @pytest_asyncio.fixture
 async def db_session() -> AsyncIterator[AsyncSession]:
-    """Provides a fresh isolated in-memory SQLite database session for testing."""
-    engine, session_factory = create_engine_and_factory("sqlite+aiosqlite:///:memory:")
+    """Provides an isolated database session for testing.
+
+    Uses TEST_DATABASE_URL if configured (e.g. PostgreSQL in CI), otherwise defaults to in-memory SQLite.
+    """
+    db_url = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+    engine, session_factory = create_engine_and_factory(db_url)
 
     async with engine.begin() as conn:
+        if "sqlite" not in db_url:
+            await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
     async with session_factory() as session:
         yield session
+
+    async with engine.begin() as conn:
+        if "sqlite" not in db_url:
+            await conn.run_sync(Base.metadata.drop_all)
 
     await engine.dispose()
 
