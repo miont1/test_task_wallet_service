@@ -1,25 +1,25 @@
 # Provider Mock Service
 
-Імітація зовнішнього платіжного провайдера.
-Зберігає інвойси в оперативній пам'яті (in-memory) та підтримує створення рахунків, симуляцію оплати й надсилання криптографічно підписаних вебхуків (включаючи дублікати для тестування ідемпотентності).
+In-memory mock of an external payment gateway provider.
+Supports invoice creation, payment status simulation, and cryptographically signed HMAC-SHA256 webhooks (including intentional duplicate delivery for idempotency verification).
 
 ---
 
-## ⚙️ Змінні оточення
+## ⚙️ Environment Variables
 
-| Змінна | За замовчуванням | Опис |
+| Variable | Default | Description |
 |---|---|---|
-| `PROVIDER_API_KEY` | `mock-provider-key-123` | Bearer токен для викликів до провайдера |
-| `PROVIDER_WEBHOOK_SECRET` | `mock-webhook-secret-456` | Секрет для підпису HMAC-SHA256 вебхуків |
-| `PROVIDER_BASE_PAY_URL` | `https://mock-provider.local/pay` | Базовий URL посилань на оплату |
-| `PROVIDER_PORT` | `8001` | Порт сервісу |
-| `PROVIDER_WEBHOOK_TIMEOUT` | `5.0` | Таймаут надсилання вебхука (в секундах) |
+| `PROVIDER_API_KEY` | `mock-provider-key-123` | Bearer token required for API authorization |
+| `PROVIDER_WEBHOOK_SECRET` | `mock-webhook-secret-456` | Shared secret key for HMAC-SHA256 webhook signing |
+| `PROVIDER_BASE_PAY_URL` | `https://mock-provider.local/pay` | Base URL for generated customer payment links |
+| `PROVIDER_PORT` | `8001` | Service HTTP port |
+| `PROVIDER_WEBHOOK_TIMEOUT` | `5.0` | Timeout in seconds for outbound webhook requests |
 
 ---
 
-## 🚀 Запуск локально
+## 🚀 Running Locally
 
-1. Створення та активація віртуального оточення:
+### 1. Create and Activate Virtual Environment
 ```bash
 python -m venv .venv
 # Windows PowerShell:
@@ -28,34 +28,34 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-2. Встановлення залежностей:
+### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Запуск сервера:
+### 3. Start the Server
 ```bash
-# З кореня репозиторію:
+# From workspace root or provider_mock directory:
 uvicorn provider_mock.main:app --reload --port 8001
 ```
 
-Інтерактивна документація Swagger доступна за адресою: [http://localhost:8001/docs](http://localhost:8001/docs).
+Interactive Swagger UI documentation is available at: [http://localhost:8001/docs](http://localhost:8001/docs).
 
 ---
 
-## 🐳 Запуск у Docker
+## 🐳 Docker Deployment
 
 ```bash
-# Збірка образу
+# Build Docker image
 docker build -t provider-mock provider_mock/
 
-# Запуск контейнера
+# Run container
 docker run -p 8001:8001 provider-mock
 ```
 
 ---
 
-## 🧪 Запуск тестів
+## 🧪 Testing
 
 ```bash
 pytest provider_mock/tests -v
@@ -63,13 +63,13 @@ pytest provider_mock/tests -v
 
 ---
 
-## 📡 API Ендпоінти
+## 📡 API Endpoints
 
-Усі запити до провайдера вимагають заголовок:
+All provider endpoints require the authorization header:
 `Authorization: Bearer <PROVIDER_API_KEY>`
 
-### 1. Створення інвойсу
-**`POST /invoices`** (Статус: 201 Created)
+### 1. Create Invoice
+**`POST /invoices`** (Status: `201 Created`)
 ```bash
 curl -X POST http://localhost:8001/invoices \
   -H "Authorization: Bearer mock-provider-key-123" \
@@ -81,7 +81,7 @@ curl -X POST http://localhost:8001/invoices \
     "callback_url": "http://wallet-service:8000/v1/webhooks/provider"
   }'
 ```
-Відповідь:
+Response:
 ```json
 {
   "invoice_id": "inv_a1b2c3d4e5f67890",
@@ -90,13 +90,13 @@ curl -X POST http://localhost:8001/invoices \
 }
 ```
 
-### 2. Отримання стану інвойсу
-**`GET /invoices/{invoice_id}`** (Статус: 200 OK)
+### 2. Retrieve Invoice State
+**`GET /invoices/{invoice_id}`** (Status: `200 OK`)
 ```bash
 curl http://localhost:8001/invoices/inv_a1b2c3d4e5f67890 \
   -H "Authorization: Bearer mock-provider-key-123"
 ```
-Відповідь:
+Response:
 ```json
 {
   "invoice_id": "inv_a1b2c3d4e5f67890",
@@ -111,8 +111,8 @@ curl http://localhost:8001/invoices/inv_a1b2c3d4e5f67890 \
 }
 ```
 
-### 3. Симуляція зміни стану та відправка вебхука
-**`POST /invoices/{invoice_id}/simulate`** (Статус: 200 OK)
+### 3. Simulate State Transition & Webhook Delivery
+**`POST /invoices/{invoice_id}/simulate`** (Status: `200 OK`)
 ```bash
 curl -X POST http://localhost:8001/invoices/inv_a1b2c3d4e5f67890/simulate \
   -H "Authorization: Bearer mock-provider-key-123" \
@@ -124,14 +124,14 @@ curl -X POST http://localhost:8001/invoices/inv_a1b2c3d4e5f67890/simulate \
     "duplicate": false
   }'
 ```
-> **Увага:** Статуси `paid`, `partially_paid` та `expired` є фінальними. Спроба повторно змінити стан інвойсу поверне **HTTP 409 Conflict**.
+> **Note:** Statuses `paid`, `partially_paid`, and `expired` are terminal. Attempting to transition an invoice once terminal returns **HTTP 409 Conflict**.
 
 ---
 
-## 🔒 Формат вебхука та підпис
+## 🔒 Webhook Format & HMAC Signature
 
-Провайдер відправляє `POST <callback_url>` із:
-- **Тілом**:
+The provider dispatches a `POST <callback_url>` with:
+- **Body**:
   ```json
   {
     "event_id": "evt_9876543210abcdef",
@@ -141,9 +141,9 @@ curl -X POST http://localhost:8001/invoices/inv_a1b2c3d4e5f67890/simulate \
     "occurred_at": "2026-10-12T10:05:00+00:00"
   }
   ```
-- **Заголовками**:
-  - `X-Timestamp: <unix_timestamp>`
+- **Headers**:
+  - `X-Timestamp: <unix_epoch_timestamp>`
   - `X-Signature: sha256=<hex_digest>`
 
-**Формула підпису**:
+**Signature Algorithm**:
 $$\text{Signature} = \text{HMAC-SHA256}(\text{secret}, \text{timestamp} + "." + \text{raw\_body})$$
