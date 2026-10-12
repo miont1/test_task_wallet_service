@@ -36,7 +36,9 @@ import pytest_asyncio
 async def client() -> AsyncIterator[httpx.AsyncClient]:
     """Test async HTTP client using ASGI transport."""
     transport = httpx.ASGITransport(app=app)
-    async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as test_client:
+    async with httpx.AsyncClient(
+        transport=transport, base_url="http://testserver"
+    ) as test_client:
         # Assign shared client into app.state for dependency injection during test
         app.state.http_client = test_client
         yield test_client

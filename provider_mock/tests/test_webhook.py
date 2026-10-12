@@ -28,7 +28,9 @@ def test_signature_changes_with_body_or_timestamp() -> None:
 
     sig_orig = compute_signature(secret, timestamp, raw_body)
     sig_diff_time = compute_signature(secret, timestamp + 1, raw_body)
-    sig_diff_body = compute_signature(secret, timestamp, '{"event_id":"evt_2","status":"paid"}')
+    sig_diff_body = compute_signature(
+        secret, timestamp, '{"event_id":"evt_2","status":"paid"}'
+    )
     sig_diff_secret = compute_signature("other-secret", timestamp, raw_body)
 
     assert sig_orig != sig_diff_time
@@ -41,10 +43,12 @@ async def test_webhook_dispatch_single(settings: Settings) -> None:
     received_requests = []
 
     async def mock_handler(request: httpx.Request) -> httpx.Response:
-        received_requests.append({
-            "content": request.content.decode(),
-            "headers": dict(request.headers),
-        })
+        received_requests.append(
+            {
+                "content": request.content.decode(),
+                "headers": dict(request.headers),
+            }
+        )
         return httpx.Response(200, json={"received": True})
 
     transport = httpx.MockTransport(mock_handler)
@@ -77,10 +81,12 @@ async def test_webhook_dispatch_duplicate(settings: Settings) -> None:
     received_requests = []
 
     async def mock_handler(request: httpx.Request) -> httpx.Response:
-        received_requests.append({
-            "content": request.content.decode(),
-            "headers": dict(request.headers),
-        })
+        received_requests.append(
+            {
+                "content": request.content.decode(),
+                "headers": dict(request.headers),
+            }
+        )
         return httpx.Response(200, json={"received": True})
 
     transport = httpx.MockTransport(mock_handler)
@@ -107,5 +113,11 @@ async def test_webhook_dispatch_duplicate(settings: Settings) -> None:
         assert body1["event_id"] == body2["event_id"]
         assert body1["invoice_id"] == "inv_duplicate_test"
 
-        assert received_requests[0]["headers"]["x-signature"] == received_requests[1]["headers"]["x-signature"]
-        assert received_requests[0]["headers"]["x-timestamp"] == received_requests[1]["headers"]["x-timestamp"]
+        assert (
+            received_requests[0]["headers"]["x-signature"]
+            == received_requests[1]["headers"]["x-signature"]
+        )
+        assert (
+            received_requests[0]["headers"]["x-timestamp"]
+            == received_requests[1]["headers"]["x-timestamp"]
+        )

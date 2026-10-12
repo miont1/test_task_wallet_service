@@ -46,12 +46,17 @@ def test_update_status_success(store: InvoiceStore) -> None:
     assert updated.paid_amount == Decimal("20.00")
 
 
-@pytest.mark.parametrize("final_status", [
-    InvoiceStatus.PAID,
-    InvoiceStatus.PARTIALLY_PAID,
-    InvoiceStatus.EXPIRED,
-])
-def test_final_status_is_immutable(store: InvoiceStore, final_status: InvoiceStatus) -> None:
+@pytest.mark.parametrize(
+    "final_status",
+    [
+        InvoiceStatus.PAID,
+        InvoiceStatus.PARTIALLY_PAID,
+        InvoiceStatus.EXPIRED,
+    ],
+)
+def test_final_status_is_immutable(
+    store: InvoiceStore, final_status: InvoiceStatus
+) -> None:
     record = store.create(
         amount=Decimal("15.00"),
         currency="USD",
@@ -62,7 +67,9 @@ def test_final_status_is_immutable(store: InvoiceStore, final_status: InvoiceSta
     store.update_status(
         invoice_id=record.invoice_id,
         new_status=final_status,
-        paid_amount=Decimal("15.00") if final_status != InvoiceStatus.EXPIRED else Decimal("0.00"),
+        paid_amount=Decimal("15.00")
+        if final_status != InvoiceStatus.EXPIRED
+        else Decimal("0.00"),
     )
 
     # Attempting to change state again must fail

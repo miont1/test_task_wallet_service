@@ -34,7 +34,9 @@ def get_webhook_dispatcher(
 
 
 def verify_bearer_token(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(http_bearer_scheme)],
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(http_bearer_scheme)
+    ],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> str:
     """Verifies that requests to provider-mock supply a valid Bearer token."""

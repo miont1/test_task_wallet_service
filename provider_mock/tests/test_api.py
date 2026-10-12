@@ -21,12 +21,15 @@ async def test_health_check(client: httpx.AsyncClient) -> None:
 @pytest.mark.asyncio
 async def test_auth_missing_or_invalid_token(client: httpx.AsyncClient) -> None:
     # 1. Missing Authorization header
-    res1 = await client.post("/invoices", json={
-        "amount": "10.00",
-        "currency": "USD",
-        "external_id": "dep_1",
-        "callback_url": "http://callback.test",
-    })
+    res1 = await client.post(
+        "/invoices",
+        json={
+            "amount": "10.00",
+            "currency": "USD",
+            "external_id": "dep_1",
+            "callback_url": "http://callback.test",
+        },
+    )
     assert res1.status_code == status.HTTP_401_UNAUTHORIZED
     assert res1.json()["error"]["code"] == "unauthorized"
 
@@ -65,14 +68,17 @@ async def test_create_invoice_success(
     assert data["pay_url"].endswith(data["invoice_id"])
 
 
-@pytest.mark.parametrize("invalid_amount", [
-    10.0,       # Float instead of string
-    10,         # Int instead of string
-    "10.5",     # Only 1 decimal place
-    "10.005",   # 3 decimal places
-    "-10.00",   # Negative amount
-    "abc",      # Non-numeric string
-])
+@pytest.mark.parametrize(
+    "invalid_amount",
+    [
+        10.0,  # Float instead of string
+        10,  # Int instead of string
+        "10.5",  # Only 1 decimal place
+        "10.005",  # 3 decimal places
+        "-10.00",  # Negative amount
+        "abc",  # Non-numeric string
+    ],
+)
 @pytest.mark.asyncio
 async def test_create_invoice_invalid_amount_validation(
     client: httpx.AsyncClient,
@@ -97,12 +103,16 @@ async def test_get_invoice_detail(
     auth_headers: dict[str, str],
 ) -> None:
     # Create invoice first
-    create_res = await client.post("/invoices", headers=auth_headers, json={
-        "amount": "25.50",
-        "currency": "USD",
-        "external_id": "dep_get_1",
-        "callback_url": "http://callback.test",
-    })
+    create_res = await client.post(
+        "/invoices",
+        headers=auth_headers,
+        json={
+            "amount": "25.50",
+            "currency": "USD",
+            "external_id": "dep_get_1",
+            "callback_url": "http://callback.test",
+        },
+    )
     invoice_id = create_res.json()["invoice_id"]
 
     # Get invoice
@@ -134,12 +144,16 @@ async def test_simulate_invoice_and_webhook_dispatch(
     auth_headers: dict[str, str],
 ) -> None:
     # 1. Create invoice
-    create_res = await client.post("/invoices", headers=auth_headers, json={
-        "amount": "10.00",
-        "currency": "USD",
-        "external_id": "dep_sim_1",
-        "callback_url": "http://receiver.test/webhook",
-    })
+    create_res = await client.post(
+        "/invoices",
+        headers=auth_headers,
+        json={
+            "amount": "10.00",
+            "currency": "USD",
+            "external_id": "dep_sim_1",
+            "callback_url": "http://receiver.test/webhook",
+        },
+    )
     invoice_id = create_res.json()["invoice_id"]
 
     # 2. Mock dispatcher using dependency override
@@ -152,11 +166,13 @@ async def test_simulate_invoice_and_webhook_dispatch(
             payload: WebhookPayload,
             duplicate: bool = False,
         ) -> WebhookDeliveryResult:
-            dispatched_calls.append({
-                "callback_url": callback_url,
-                "payload": payload,
-                "duplicate": duplicate,
-            })
+            dispatched_calls.append(
+                {
+                    "callback_url": callback_url,
+                    "payload": payload,
+                    "duplicate": duplicate,
+                }
+            )
             status_codes = [200, 200] if duplicate else [200]
             return WebhookDeliveryResult(status_codes=status_codes, errors=[])
 
@@ -199,12 +215,16 @@ async def test_simulate_already_final_invoice_returns_409(
     auth_headers: dict[str, str],
 ) -> None:
     # 1. Create invoice
-    create_res = await client.post("/invoices", headers=auth_headers, json={
-        "amount": "10.00",
-        "currency": "USD",
-        "external_id": "dep_final_1",
-        "callback_url": "http://callback.test",
-    })
+    create_res = await client.post(
+        "/invoices",
+        headers=auth_headers,
+        json={
+            "amount": "10.00",
+            "currency": "USD",
+            "external_id": "dep_final_1",
+            "callback_url": "http://callback.test",
+        },
+    )
     invoice_id = create_res.json()["invoice_id"]
 
     # 2. Simulate to paid

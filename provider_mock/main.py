@@ -49,7 +49,9 @@ app = FastAPI(
 
 
 @app.exception_handler(InvoiceNotFoundError)
-async def handle_invoice_not_found(_: Request, exc: InvoiceNotFoundError) -> JSONResponse:
+async def handle_invoice_not_found(
+    _: Request, exc: InvoiceNotFoundError
+) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
         content={"error": {"code": exc.code, "message": exc.message}},
@@ -57,7 +59,9 @@ async def handle_invoice_not_found(_: Request, exc: InvoiceNotFoundError) -> JSO
 
 
 @app.exception_handler(InvoiceAlreadyFinalError)
-async def handle_invoice_already_final(_: Request, exc: InvoiceAlreadyFinalError) -> JSONResponse:
+async def handle_invoice_already_final(
+    _: Request, exc: InvoiceAlreadyFinalError
+) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content={
@@ -72,8 +76,11 @@ async def handle_invoice_already_final(_: Request, exc: InvoiceAlreadyFinalError
         },
     )
 
+
 @app.exception_handler(RequestValidationError)
-async def handle_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+async def handle_validation_error(
+    _: Request, exc: RequestValidationError
+) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         content={

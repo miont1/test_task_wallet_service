@@ -22,7 +22,9 @@ class Settings(BaseSettings):
     )
     host: str = Field(default="0.0.0.0", alias="PROVIDER_HOST")
     port: int = Field(default=8001, alias="PROVIDER_PORT")
-    webhook_timeout_seconds: float = Field(default=5.0, alias="PROVIDER_WEBHOOK_TIMEOUT")
+    webhook_timeout_seconds: float = Field(
+        default=5.0, alias="PROVIDER_WEBHOOK_TIMEOUT"
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

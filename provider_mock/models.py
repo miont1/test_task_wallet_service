@@ -48,7 +48,9 @@ def validate_money_amount(value: Any) -> Decimal:
     if not isinstance(value, str):
         raise ValueError("Money amount must be provided as a string (e.g. '10.00')")  # noqa: TRY004
     if not MONEY_REGEX.match(value):
-        raise ValueError("Money amount must have exactly two decimal places (e.g. '10.00')")
+        raise ValueError(
+            "Money amount must have exactly two decimal places (e.g. '10.00')"
+        )
     dec = Decimal(value)
     if dec < Decimal("0.00"):
         raise ValueError("Money amount cannot be negative")
@@ -84,7 +86,9 @@ class InvoiceCreateRequest(BaseModel):
     amount: Money
     currency: str = Field(default="USD")
     external_id: str = Field(..., description="ID of the deposit or external reference")
-    callback_url: str = Field(..., description="Webhook URL to be notified upon payment")
+    callback_url: str = Field(
+        ..., description="Webhook URL to be notified upon payment"
+    )
 
     @field_validator("amount")
     @classmethod
@@ -129,7 +133,9 @@ class SimulateRequest(BaseModel):
     @classmethod
     def validate_simulate_status(cls, v: InvoiceStatus) -> InvoiceStatus:
         if v not in FINAL_STATUSES:
-            raise ValueError("Simulated status must be one of: paid, partially_paid, expired")
+            raise ValueError(
+                "Simulated status must be one of: paid, partially_paid, expired"
+            )
         return v
 
     @model_validator(mode="after")
@@ -144,9 +150,7 @@ class WebhookPayload(BaseModel):
     invoice_id: str
     status: InvoiceStatus
     paid_amount: Money
-    occurred_at: str = Field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    occurred_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class SimulateResponse(BaseModel):
