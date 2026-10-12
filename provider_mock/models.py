@@ -32,13 +32,19 @@ MONEY_REGEX = re.compile(r"^\d+\.\d{2}$")
 
 
 def validate_money_amount(value: Any) -> Decimal:
-    """Strictly validates money input from JSON:
+    """Strictly validates money input:
 
-    - Must be a string (number/float gives validation error -> 422)
-    - Must have exactly two decimal places (e.g. '10.00')
-    - Must be non-negative
-    Returns a Python Decimal.
+    - When received from JSON: must be a string (e.g. '10.00'). Floats/ints raise TypeError (422).
+    - In Python: can be str or Decimal.
+    - Must have at most/exactly two decimal places and be non-negative.
     """
+    if isinstance(value, Decimal):
+        if value < Decimal("0.00"):
+            raise ValueError("Money amount cannot be negative")
+        if value.as_tuple().exponent < -2:
+            raise ValueError("Money amount cannot have more than two decimal places")
+        return value
+
     if not isinstance(value, str):
         raise TypeError("Money amount must be provided as a string (e.g. '10.00')")
     if not MONEY_REGEX.match(value):
