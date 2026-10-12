@@ -66,3 +66,44 @@ class InsufficientFundsError(AppError):
             status_code=status.HTTP_400_BAD_REQUEST,
             details=details,
         )
+
+
+class ProviderTimeoutError(AppError):
+    def __init__(
+        self,
+        message: str = "Payment provider request timed out",
+        code: str = "provider_timeout",
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=code,
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+        )
+
+
+class ProviderUnavailableError(AppError):
+    def __init__(
+        self,
+        message: str = "Payment provider is currently unreachable",
+        code: str = "provider_unavailable",
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=code,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+
+
+class ProviderBadResponseError(AppError):
+    def __init__(
+        self,
+        message: str = "Payment provider returned an invalid or error response",
+        code: str = "provider_error",
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(
+            message=message,
+            code=code,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            details=details,
+        )

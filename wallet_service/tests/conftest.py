@@ -32,6 +32,7 @@ async def client(db_session: AsyncSession) -> AsyncIterator[httpx.AsyncClient]:
 
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as test_client:
+        app.state.http_client = test_client
         yield test_client
 
     app.dependency_overrides.pop(get_db_session, None)

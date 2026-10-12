@@ -1,15 +1,36 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+import httpx
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from wallet_service.api.v1.accounts import router as accounts_router
+from wallet_service.api.v1.deposits import router as deposits_router
+from wallet_service.config import get_settings
 from wallet_service.core.errors import AppError
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Manages application startup and shutdown lifecycle.
+
+    Initializes a shared HTTP client pool for outbound provider requests.
+    """
+    settings = get_settings()
+    timeout = httpx.Timeout(settings.provider_timeout_seconds)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        app.state.http_client = client
+        yield
+
 
 app = FastAPI(
     title="LedgerLite Wallet Service",
     description="Internal USD ledger, credit purchasing and payment processing system.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
@@ -55,3 +76,4 @@ async def health_check() -> dict[str, str]:
 
 
 app.include_router(accounts_router)
+app.include_router(deposits_router)
