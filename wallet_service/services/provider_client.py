@@ -21,6 +21,14 @@ class ProviderInvoiceResponse(BaseModel):
     pay_url: str
 
 
+class ProviderInvoiceDetail(BaseModel):
+    invoice_id: str
+    status: str
+    amount: Decimal
+    paid_amount: Decimal
+    currency: str
+
+
 class ProviderClient:
     """Async HTTP client for calling the provider-mock payment service."""
 
@@ -92,4 +100,57 @@ class ProviderClient:
             invoice_id=data["invoice_id"],
             status=data["status"],
             pay_url=data["pay_url"],
+        )
+
+    async def get_invoice(self, invoice_id: str) -> ProviderInvoiceDetail:
+        """Calls GET /invoices/{invoice_id} to query current invoice status and paid amount."""
+        target_url = (
+            f"{self._settings.provider_base_url.rstrip('/')}/invoices/{invoice_id}"
+        )
+        headers = {
+            "Authorization": f"Bearer {self._settings.provider_api_key}",
+        }
+
+        try:
+            response = await self._client.get(
+                target_url,
+                headers=headers,
+                timeout=self._settings.provider_timeout_seconds,
+            )
+        except httpx.TimeoutException as exc:
+            logger.error(
+                "Provider get_invoice request timed out for %s: %s", invoice_id, exc
+            )
+            raise ProviderTimeoutError() from exc
+        except (httpx.ConnectError, httpx.NetworkError) as exc:
+            logger.error(
+                "Provider get_invoice connection failed for %s: %s", invoice_id, exc
+            )
+            raise ProviderUnavailableError() from exc
+
+        if response.status_code != 200:
+            logger.error(
+                "Provider get_invoice returned status %s for %s: %s",
+                response.status_code,
+                invoice_id,
+                response.text,
+            )
+            details = None
+            try:
+                details = response.json()
+            except ValueError:
+                details = {"raw_response": response.text}
+
+            raise ProviderBadResponseError(
+                message=f"Failed to fetch invoice from provider (HTTP {response.status_code})",
+                details=details,
+            )
+
+        data = response.json()
+        return ProviderInvoiceDetail(
+            invoice_id=data["invoice_id"],
+            status=data["status"],
+            amount=Decimal(data["amount"]),
+            paid_amount=Decimal(data["paid_amount"]),
+            currency=data.get("currency", "USD"),
         )
